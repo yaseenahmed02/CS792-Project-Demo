@@ -12,12 +12,17 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { CTAS_LEVELS, DEFAULT_SHIFTS } from "@/lib/constants";
+import { DEFAULT_SHIFTS } from "@/lib/constants";
 import { formatHour } from "@/lib/utils/format";
 import type { ForecastSeries } from "@/lib/types";
 
 const SHIFT_BOUNDARY_COLOR = "#d4d4d8";
 const NOW_COLOR = "#0d9488";
+
+const STREAM_COLORS = {
+  highAcuity: "#ef4444",   // red-500
+  nonSevere: "#3b82f6",    // blue-500
+};
 
 interface CTASArrivalsChartProps {
   ctasArrivals: Record<number, ForecastSeries>;
@@ -32,47 +37,55 @@ function getShiftBoundaryHours(): number[] {
   return Array.from(hours).sort((a, b) => a - b);
 }
 
-/** Merge all 5 CTAS levels into a flat array for Recharts stacked area. */
+/** Aggregate 5 CTAS streams into 2: High-Acuity (1-2) and Non-Severe (3-5). */
 function buildStackedData(ctasArrivals: Record<number, ForecastSeries>) {
   const firstSeries = ctasArrivals[1];
   if (!firstSeries) return [];
 
   return firstSeries.data.map((point, i) => {
-    const row: Record<string, number | string> = {
+    const highAcuity =
+      (ctasArrivals[1]?.data[i]?.p50 ?? 0) +
+      (ctasArrivals[2]?.data[i]?.p50 ?? 0);
+    const nonSevere =
+      (ctasArrivals[3]?.data[i]?.p50 ?? 0) +
+      (ctasArrivals[4]?.data[i]?.p50 ?? 0) +
+      (ctasArrivals[5]?.data[i]?.p50 ?? 0);
+
+    return {
       name: formatHour(point.hour),
       hour: point.hour,
+      highAcuity: Math.round(highAcuity * 10) / 10,
+      nonSevere: Math.round(nonSevere * 10) / 10,
     };
-
-    for (let level = 1; level <= 5; level++) {
-      const value = ctasArrivals[level]?.data[i]?.p50 ?? 0;
-      row[`ctas${level}`] = Math.round(value * 10) / 10;
-    }
-
-    return row;
   });
 }
 
-/** Custom tooltip showing per-CTAS breakdown. */
+/** Custom tooltip showing high-acuity vs non-severe breakdown. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CTASTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
+
+  const streams = [
+    { key: "highAcuity", label: "High-acuity arrivals", color: STREAM_COLORS.highAcuity },
+    { key: "nonSevere", label: "Non-severe arrivals", color: STREAM_COLORS.nonSevere },
+  ];
 
   return (
     <div className="rounded-md border bg-background p-2.5 shadow-sm">
       <p className="text-xs font-medium text-muted-foreground mb-1.5">{label}</p>
       <div className="space-y-1">
-        {CTAS_LEVELS.map((ctas) => {
+        {streams.map((stream) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const entry = payload.find((p: any) => p.dataKey === `ctas${ctas.level}`);
+          const entry = payload.find((p: any) => p.dataKey === stream.key);
           if (!entry) return null;
 
           return (
-            <div key={ctas.level} className="flex items-center gap-2 text-xs">
+            <div key={stream.key} className="flex items-center gap-2 text-xs">
               <div
                 className="h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: ctas.color }}
+                style={{ backgroundColor: stream.color }}
               />
-              <span className="text-muted-foreground">{ctas.name}</span>
+              <span className="text-muted-foreground">{stream.label}</span>
               <span className="font-mono font-medium ml-auto">
                 {entry.value.toFixed(1)}
               </span>
@@ -98,26 +111,21 @@ export function CTASArrivalsChart({ ctasArrivals }: CTASArrivalsChartProps) {
       <CardContent className="p-4">
         <div className="mb-3">
           <h3 className="text-sm font-medium text-foreground">
-            Patient Arrivals by Acuity (CTAS)
+            Patient Arrivals Forecast
           </h3>
           <p className="text-xs text-muted-foreground">patients/hr</p>
         </div>
         <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <defs>
-              {CTAS_LEVELS.map((ctas) => (
-                <linearGradient
-                  key={ctas.level}
-                  id={`gradient-ctas-${ctas.level}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop offset="0%" stopColor={ctas.color} stopOpacity={0.6} />
-                  <stop offset="100%" stopColor={ctas.color} stopOpacity={0.15} />
-                </linearGradient>
-              ))}
+              <linearGradient id="gradient-highAcuity" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={STREAM_COLORS.highAcuity} stopOpacity={0.6} />
+                <stop offset="100%" stopColor={STREAM_COLORS.highAcuity} stopOpacity={0.15} />
+              </linearGradient>
+              <linearGradient id="gradient-nonSevere" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={STREAM_COLORS.nonSevere} stopOpacity={0.6} />
+                <stop offset="100%" stopColor={STREAM_COLORS.nonSevere} stopOpacity={0.15} />
+              </linearGradient>
             </defs>
 
             <CartesianGrid
@@ -150,22 +158,30 @@ export function CTASArrivalsChart({ ctasArrivals }: CTASArrivalsChartProps) {
               wrapperStyle={{ fontSize: 11 }}
             />
 
-            {/* Render in reverse order so CTAS 1 (most severe) is on top */}
-            {[...CTAS_LEVELS].reverse().map((ctas) => (
-              <Area
-                key={ctas.level}
-                type="monotone"
-                dataKey={`ctas${ctas.level}`}
-                name={`CTAS ${ctas.level}`}
-                stackId="ctas"
-                stroke={ctas.color}
-                strokeWidth={1}
-                fill={`url(#gradient-ctas-${ctas.level})`}
-                isAnimationActive={true}
-                animationDuration={800}
-                animationEasing="ease-out"
-              />
-            ))}
+            <Area
+              type="monotone"
+              dataKey="nonSevere"
+              name="Non-severe arrivals"
+              stackId="arrivals"
+              stroke={STREAM_COLORS.nonSevere}
+              strokeWidth={1}
+              fill="url(#gradient-nonSevere)"
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
+            <Area
+              type="monotone"
+              dataKey="highAcuity"
+              name="High-acuity arrivals"
+              stackId="arrivals"
+              stroke={STREAM_COLORS.highAcuity}
+              strokeWidth={1}
+              fill="url(#gradient-highAcuity)"
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
 
             {/* Shift boundary lines */}
             {shiftBoundaries.map((hour) => (

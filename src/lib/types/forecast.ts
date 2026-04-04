@@ -20,6 +20,7 @@ export interface ForecastResponse {
   riskPosture: RiskPosture;
   ctasArrivals: Record<number, ForecastSeries>;
   edOccupancy: ForecastSeries;
+  ctasOccupancy: Record<number, ForecastSeries>;
   orUtilization: ForecastSeries;
   equipmentUtilization: Record<string, ForecastSeries>;
 }

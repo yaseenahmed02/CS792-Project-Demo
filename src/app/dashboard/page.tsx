@@ -8,6 +8,7 @@ import {
   CurrentEdStatus,
   ForecastChart,
   CTASArrivalsChart,
+  AcuityOccupancyChart,
   ORUtilizationChart,
   EquipmentUtilizationChart,
 } from "@/components/dashboard";
@@ -110,8 +111,11 @@ export default function DashboardPage() {
       {/* Second row: Current ED status metrics */}
       <CurrentEdStatus forecast={forecast} />
 
-      {/* CTAS arrivals chart — full width */}
-      <CTASArrivalsChart ctasArrivals={forecast.ctasArrivals} />
+      {/* Arrivals forecast + Current patient acuity — side by side */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+        <CTASArrivalsChart ctasArrivals={forecast.ctasArrivals} />
+        <AcuityOccupancyChart ctasOccupancy={forecast.ctasOccupancy} />
+      </div>
 
       {/* ED occupancy + OR utilization — side by side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">

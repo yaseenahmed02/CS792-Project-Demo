@@ -224,12 +224,23 @@ export function generateForecast(
     );
   }
 
+  const ctasOccupancy: Record<number, ForecastSeries> = {};
+  for (const ctas of CTAS_LEVELS) {
+    ctasOccupancy[ctas.level] = buildSeries(
+      `CTAS-${ctas.level} ${ctas.name}`,
+      "patients",
+      occupancyByCTAS[ctas.level],
+      baseDate,
+    );
+  }
+
   return {
     generatedAt: new Date().toISOString(),
     scenarios,
     riskPosture,
     ctasArrivals,
     edOccupancy: buildSeries("ED Occupancy", "patients", totalOccupancy, baseDate),
+    ctasOccupancy,
     orUtilization: buildSeries("OR Utilization", "utilization", orUtil, baseDate),
     equipmentUtilization,
   };

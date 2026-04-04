@@ -32,7 +32,7 @@ export default function StaffingPage() {
 
     addAuditEntry({
       eventType: "proposal_generated",
-      summary: `Staffing proposal generated for ${riskPosture} risk posture`,
+      summary: `Staffing proposal generated for ${{ normal: "lean", elevated: "standard", critical: "surge" }[riskPosture]} risk posture`,
       detail: {
         decisionMaker: "System",
         riskPosture,

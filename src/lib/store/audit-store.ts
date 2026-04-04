@@ -18,7 +18,7 @@ const DEMO_ENTRIES: AuditEntry[] = [
     id: "demo-1",
     timestamp: new Date(Date.now() - 3600_000 * 2).toISOString(),
     eventType: "proposal_generated",
-    summary: "Staffing proposal generated for normal risk posture",
+    summary: "Staffing proposal generated for lean risk posture",
     detail: {
       decisionMaker: "System",
       riskPosture: "normal",

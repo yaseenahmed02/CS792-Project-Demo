@@ -13,12 +13,12 @@ interface RiskOption {
 }
 
 const RISK_OPTIONS: RiskOption[] = [
-  { posture: "normal", label: "Normal", quantile: "P10", dotColor: "bg-emerald-500" },
-  { posture: "elevated", label: "Elevated", quantile: "P50", dotColor: "bg-amber-500" },
-  { posture: "critical", label: "Critical", quantile: "P90", dotColor: "bg-rose-500" },
+  { posture: "normal", label: "Lean", quantile: "P50", dotColor: "bg-emerald-500" },
+  { posture: "elevated", label: "Standard", quantile: "P75", dotColor: "bg-amber-500" },
+  { posture: "critical", label: "Surge", quantile: "P90", dotColor: "bg-rose-500" },
 ];
 
-/**Segmented control for selecting risk posture (Normal/Elevated/Critical).*/
+/**Segmented control for selecting risk posture (Lean/Standard/Surge).*/
 export function RiskSelector() {
   const riskPosture = useScenarioStore((s) => s.riskPosture);
   const setRiskPosture = useScenarioStore((s) => s.setRiskPosture);

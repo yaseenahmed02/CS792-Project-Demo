@@ -14,6 +14,12 @@ function buildActiveScenarioLabels(scenarios: {
   return labels;
 }
 
+const RISK_POSTURE_LABELS: Record<string, string> = {
+  normal: "Lean",
+  elevated: "Standard",
+  critical: "Surge",
+};
+
 const DOT_SEPARATOR = (
   <span className="text-muted-foreground/40" aria-hidden>
     &middot;
@@ -30,8 +36,8 @@ export function StatusBar() {
       {/* Risk posture */}
       <div className="flex items-center gap-1.5">
         <span className={cn("h-1.5 w-1.5 rounded-full", colors.dot)} />
-        <span className={cn("capitalize text-muted-foreground", colors.text)}>
-          {riskPosture}
+        <span className={cn("text-muted-foreground", colors.text)}>
+          {RISK_POSTURE_LABELS[riskPosture] ?? riskPosture}
         </span>
       </div>
 

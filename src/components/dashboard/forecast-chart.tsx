@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { BLOCKS } from "@/lib/constants";
+import { DEFAULT_SHIFTS } from "@/lib/constants";
 import { formatHour } from "@/lib/utils/format";
 import type { ForecastSeries } from "@/lib/types";
 
@@ -101,7 +101,7 @@ export function ForecastChart({
   const currentHour = new Date().getHours();
   const gradientId = title.replace(/\s+/g, "-").toLowerCase();
 
-  const blockBoundaries = BLOCKS.map((b) => b.startHour).filter((h) => h > 0);
+  const shiftBoundaries = [...new Set(DEFAULT_SHIFTS.map((s) => s.startHour))].filter((h) => h > 0);
 
   return (
     <Card className="border shadow-none">
@@ -184,19 +184,14 @@ export function ForecastChart({
               animationEasing="ease-out"
             />
 
-            {/* Block boundary lines */}
-            {blockBoundaries.map((hour) => (
+            {/* Shift boundary lines */}
+            {shiftBoundaries.map((hour) => (
               <ReferenceLine
-                key={`block-${hour}`}
+                key={`shift-${hour}`}
                 x={formatHour(hour)}
                 stroke={COLORS.blockBoundary}
                 strokeDasharray="3 3"
                 strokeWidth={0.5}
-                label={{
-                  value: `B${hour / 4}`,
-                  position: "top",
-                  style: { fontSize: 9, fill: "hsl(var(--muted-foreground))" },
-                }}
               />
             ))}
 

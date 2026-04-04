@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BlockTimeline, StaffingGrid } from "@/components/staffing";
+import {
+  ShiftTimeline,
+  StaffingGrid,
+  DemandCoverageChart,
+} from "@/components/staffing";
 import { useStaffing } from "@/hooks/use-staffing";
 import { useStaffingStore, useAuditStore, useScenarioStore } from "@/lib/store";
 import { toast } from "sonner";
 
-/**Staffing proposals page: timeline, grid, and export controls.*/
+/**Staffing proposals page: timeline, demand chart, grid, and export controls.*/
 export default function StaffingPage() {
   const { proposal, isLoading, error } = useStaffing();
   const decisions = useStaffingStore((s) => s.decisions);
@@ -70,7 +74,7 @@ export default function StaffingPage() {
             Staffing proposals
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Review and decide on staffing for each 4-hour block
+            Review and decide on staffing for each shift
           </p>
         </div>
         {isAllDecided && (
@@ -81,19 +85,31 @@ export default function StaffingPage() {
         )}
       </div>
 
+      {/* Shift timeline */}
       <div>
         <p className="mb-3 text-sm font-medium text-muted-foreground">
-          24-hour overview
+          24-hour shift overview
         </p>
-        <BlockTimeline decisions={decisions} />
+        <ShiftTimeline
+          shifts={proposal.shifts}
+          decisions={decisions}
+        />
       </div>
 
+      {/* Demand vs coverage chart */}
+      <DemandCoverageChart
+        hourlyDemand={proposal.hourlyDemand}
+        hourlyCoverage={proposal.hourlyCoverage}
+        shifts={proposal.shifts}
+      />
+
+      {/* Staffing grid */}
       <div>
         <p className="mb-3 text-sm font-medium text-muted-foreground">
           Staffing grid
         </p>
         <div className="rounded-lg border">
-          <StaffingGrid blocks={proposal.blocks} decisions={decisions} />
+          <StaffingGrid shifts={proposal.shifts} decisions={decisions} />
         </div>
       </div>
     </div>
@@ -108,9 +124,10 @@ function StaffingPageSkeleton() {
         <Skeleton className="mt-2 h-4 w-80" />
       </div>
       <div>
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="mt-3 h-10 w-full" />
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="mt-3 h-24 w-full" />
       </div>
+      <Skeleton className="h-72 w-full" />
       <div>
         <Skeleton className="h-4 w-24" />
         <div className="mt-3 space-y-px">

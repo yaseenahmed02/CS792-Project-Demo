@@ -14,6 +14,7 @@ interface UseStaffingResult {
 /**
  * Fetch the staffing proposal from /api/staffing based on current scenario state.
  * Auto-refetches when scenarios or risk posture change.
+ * Returns a StaffingProposal with shifts (not blocks).
  */
 export function useStaffing(): UseStaffingResult {
   const scenarios = useScenarioStore((s) => s.scenarios);

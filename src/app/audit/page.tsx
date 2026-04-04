@@ -44,7 +44,7 @@ export default function AuditPage() {
 function applyFilters(entries: AuditEntry[], filters: AuditFilterState): AuditEntry[] {
   let result = entries.filter((entry) => {
     if (!filters.eventTypes.has(entry.eventType)) return false;
-    if (entry.blockId && !filters.blocks.has(entry.blockId)) return false;
+    if (entry.shiftId && !filters.shifts.has(entry.shiftId)) return false;
     return true;
   });
 

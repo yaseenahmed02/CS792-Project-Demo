@@ -13,18 +13,18 @@ import {
   Shield,
 } from "lucide-react";
 import type {
-  BlockId,
-  BlockDecisionState,
-  StaffingBlock,
+  ShiftId,
+  ShiftDecisionState,
+  StaffingShift,
   StaffingConstraint,
   RoleStaffing,
   RoleName,
 } from "@/lib/types";
 import { useStaffingStore, useAuditStore, useScenarioStore } from "@/lib/store";
-import { formatDelta } from "@/lib/utils/format";
+import { formatDelta, formatTimeRange } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
-import { BlockActions } from "./block-actions";
+import { ShiftActions } from "./shift-actions";
 import { DeclineModal } from "./decline-modal";
 import { RationalePanel } from "./rationale-panel";
 
@@ -53,93 +53,99 @@ const DECISION_DOT: Record<string, string> = {
   "re-suggested": "bg-amber-500",
 };
 
+const CATEGORY_BADGE: Record<string, string> = {
+  core: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  swing: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  flex: "bg-purple-500/10 text-purple-700 dark:text-purple-300",
+};
+
 interface StaffingGridProps {
-  blocks: StaffingBlock[];
-  decisions: Record<BlockId, BlockDecisionState>;
+  shifts: StaffingShift[];
+  decisions: Record<ShiftId, ShiftDecisionState>;
 }
 
-/**6-column x 9-row staffing grid with clean tabular layout.*/
-export function StaffingGrid({ blocks, decisions }: StaffingGridProps) {
-  const [declineBlockId, setDeclineBlockId] = useState<BlockId | null>(null);
-  const [selectedBlock, setSelectedBlock] = useState<BlockId | null>(null);
+/**Shift-column x role-row staffing grid with accept/decline workflow.*/
+export function StaffingGrid({ shifts, decisions }: StaffingGridProps) {
+  const [declineShiftId, setDeclineShiftId] = useState<ShiftId | null>(null);
+  const [selectedShift, setSelectedShift] = useState<ShiftId | null>(null);
 
-  const acceptBlock = useStaffingStore((s) => s.acceptBlock);
-  const declineBlock = useStaffingStore((s) => s.declineBlock);
+  const acceptShift = useStaffingStore((s) => s.acceptShift);
+  const declineShift = useStaffingStore((s) => s.declineShift);
   const applyManualOverride = useStaffingStore((s) => s.applyManualOverride);
   const applyReSuggestion = useStaffingStore((s) => s.applyReSuggestion);
-  const resetBlock = useStaffingStore((s) => s.resetBlock);
+  const resetShift = useStaffingStore((s) => s.resetShift);
   const addAuditEntry = useAuditStore((s) => s.addEntry);
   const scenarios = useScenarioStore((s) => s.scenarios);
   const riskPosture = useScenarioStore((s) => s.riskPosture);
 
-  const roleNames = blocks[0]?.roles.map((r) => r.role) ?? [];
+  const roleNames = shifts[0]?.roles.map((r) => r.role) ?? [];
 
-  function handleAccept(blockId: BlockId) {
-    acceptBlock(blockId);
+  function handleAccept(shiftId: ShiftId) {
+    acceptShift(shiftId);
     addAuditEntry({
-      eventType: "block_accepted",
-      blockId,
-      summary: `Block ${blockId} accepted`,
+      eventType: "shift_accepted",
+      shiftId,
+      summary: `Shift ${shiftId} accepted`,
       detail: { decisionMaker: "Charge Nurse", riskPosture, scenarios },
     });
-    toast.success(`Block ${blockId} accepted`);
+    toast.success(`Shift ${shiftId} accepted`);
   }
 
-  function handleReset(blockId: BlockId) {
-    resetBlock(blockId);
-    toast.info(`Block ${blockId} reset to pending`);
+  function handleReset(shiftId: ShiftId) {
+    resetShift(shiftId);
+    toast.info(`Shift ${shiftId} reset to pending`);
   }
 
   function handleDeclineWithManual(
-    blockId: BlockId,
+    shiftId: ShiftId,
     reason: string,
     staffing: RoleStaffing[],
   ) {
-    declineBlock(blockId, reason);
-    applyManualOverride(blockId, staffing);
+    declineShift(shiftId, reason);
+    applyManualOverride(shiftId, staffing);
     addAuditEntry({
       eventType: "manual_override",
-      blockId,
-      summary: `Block ${blockId} declined with manual override`,
+      shiftId,
+      summary: `Shift ${shiftId} declined with manual override`,
       detail: {
         decisionMaker: "Charge Nurse",
         riskPosture,
         scenarios,
         declineReason: reason,
-        originalStaffing: decisions[blockId]?.originalProposal,
+        originalStaffing: decisions[shiftId]?.originalProposal,
         revisedStaffing: staffing,
       },
     });
-    toast.info(`Block ${blockId} manually overridden`);
+    toast.info(`Shift ${shiftId} manually overridden`);
   }
 
   function handleDeclineWithReSuggest(
-    blockId: BlockId,
+    shiftId: ShiftId,
     reason: string,
     constraints: StaffingConstraint[],
     revised: RoleStaffing[],
   ) {
-    declineBlock(blockId, reason);
-    applyReSuggestion(blockId, revised);
+    declineShift(shiftId, reason);
+    applyReSuggestion(shiftId, revised);
     addAuditEntry({
       eventType: "re_suggest_accepted",
-      blockId,
-      summary: `Block ${blockId} re-suggested and accepted`,
+      shiftId,
+      summary: `Shift ${shiftId} re-suggested and accepted`,
       detail: {
         decisionMaker: "Charge Nurse",
         riskPosture,
         scenarios,
         declineReason: reason,
         constraints,
-        originalStaffing: decisions[blockId]?.originalProposal,
+        originalStaffing: decisions[shiftId]?.originalProposal,
         revisedStaffing: revised,
       },
     });
-    toast.success(`Block ${blockId} revised proposal accepted`);
+    toast.success(`Shift ${shiftId} revised proposal accepted`);
   }
 
-  const declineModalBlock = declineBlockId
-    ? decisions[declineBlockId]
+  const declineModalState = declineShiftId
+    ? decisions[declineShiftId]
     : null;
 
   return (
@@ -151,41 +157,19 @@ export function StaffingGrid({ blocks, decisions }: StaffingGridProps) {
               <th className="sticky left-0 z-10 w-44 bg-background px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
                 Role
               </th>
-              {blocks.map((block) => {
-                const decision = decisions[block.blockId]?.decision ?? "pending";
-                return (
-                  <th
-                    key={block.blockId}
-                    className="min-w-[110px] px-3 py-2.5 text-center"
-                  >
-                    <button
-                      onClick={() =>
-                        setSelectedBlock(
-                          selectedBlock === block.blockId
-                            ? null
-                            : block.blockId,
-                        )
-                      }
-                      className="inline-flex w-full flex-col items-center gap-0.5"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium text-foreground">
-                          {block.blockId}
-                        </span>
-                        <div
-                          className={cn(
-                            "h-1 w-1 rounded-full",
-                            DECISION_DOT[decision],
-                          )}
-                        />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {block.label}
-                      </span>
-                    </button>
-                  </th>
-                );
-              })}
+              {shifts.map((shift) => (
+                <ShiftColumnHeader
+                  key={shift.shiftId}
+                  shift={shift}
+                  decision={decisions[shift.shiftId]?.decision ?? "pending"}
+                  isSelected={selectedShift === shift.shiftId}
+                  onSelect={() =>
+                    setSelectedShift(
+                      selectedShift === shift.shiftId ? null : shift.shiftId,
+                    )
+                  }
+                />
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -194,17 +178,17 @@ export function StaffingGrid({ blocks, decisions }: StaffingGridProps) {
                 <td className="sticky left-0 z-10 bg-background px-4 py-2">
                   <RoleLabel roleName={roleName} />
                 </td>
-                {blocks.map((block) => {
-                  const state = decisions[block.blockId];
+                {shifts.map((shift) => {
+                  const state = decisions[shift.shiftId];
                   const role = state
                     ? state.currentStaffing.find((r) => r.role === roleName)
-                    : block.roles.find((r) => r.role === roleName);
+                    : shift.roles.find((r) => r.role === roleName);
 
-                  if (!role) return <td key={block.blockId} />;
+                  if (!role) return <td key={shift.shiftId} />;
 
                   return (
                     <StaffingCell
-                      key={block.blockId}
+                      key={shift.shiftId}
                       headcount={role.headcount}
                       delta={role.delta}
                     />
@@ -218,22 +202,19 @@ export function StaffingGrid({ blocks, decisions }: StaffingGridProps) {
               <td className="sticky left-0 z-10 bg-background px-4 py-2 text-xs font-medium text-muted-foreground">
                 Actions
               </td>
-              {blocks.map((block) => {
+              {shifts.map((shift) => {
                 const decision =
-                  decisions[block.blockId]?.decision ?? "pending";
+                  decisions[shift.shiftId]?.decision ?? "pending";
                 return (
-                  <td
-                    key={block.blockId}
-                    className="px-3 py-2 text-center"
-                  >
-                    <BlockActions
-                      blockId={block.blockId}
+                  <td key={shift.shiftId} className="px-3 py-2 text-center">
+                    <ShiftActions
+                      shiftId={shift.shiftId}
                       decision={decision}
-                      onAccept={() => handleAccept(block.blockId)}
-                      onDecline={() => setDeclineBlockId(block.blockId)}
-                      onReset={() => handleReset(block.blockId)}
-                      onManualEntry={() => setDeclineBlockId(block.blockId)}
-                      onReSuggest={() => setDeclineBlockId(block.blockId)}
+                      onAccept={() => handleAccept(shift.shiftId)}
+                      onDecline={() => setDeclineShiftId(shift.shiftId)}
+                      onReset={() => handleReset(shift.shiftId)}
+                      onManualEntry={() => setDeclineShiftId(shift.shiftId)}
+                      onReSuggest={() => setDeclineShiftId(shift.shiftId)}
                     />
                   </td>
                 );
@@ -243,28 +224,28 @@ export function StaffingGrid({ blocks, decisions }: StaffingGridProps) {
         </table>
       </div>
 
-      {selectedBlock && (
+      {selectedShift && (
         <div className="border-t px-4 py-4">
           <RationalePanel
-            block={blocks.find((b) => b.blockId === selectedBlock)!}
+            shift={shifts.find((s) => s.shiftId === selectedShift)!}
             riskPosture={riskPosture}
             scenarios={scenarios}
           />
         </div>
       )}
 
-      {declineBlockId && declineModalBlock && (
+      {declineShiftId && declineModalState && (
         <DeclineModal
-          isOpen={!!declineBlockId}
-          onClose={() => setDeclineBlockId(null)}
-          blockId={declineBlockId}
-          currentStaffing={declineModalBlock.currentStaffing}
+          isOpen={!!declineShiftId}
+          onClose={() => setDeclineShiftId(null)}
+          shiftId={declineShiftId}
+          currentStaffing={declineModalState.currentStaffing}
           onDeclineWithManual={(reason, staffing) =>
-            handleDeclineWithManual(declineBlockId, reason, staffing)
+            handleDeclineWithManual(declineShiftId, reason, staffing)
           }
           onDeclineWithReSuggest={(reason, constraints, revised) =>
             handleDeclineWithReSuggest(
-              declineBlockId,
+              declineShiftId,
               reason,
               constraints,
               revised,
@@ -273,6 +254,50 @@ export function StaffingGrid({ blocks, decisions }: StaffingGridProps) {
         />
       )}
     </>
+  );
+}
+
+function ShiftColumnHeader({
+  shift,
+  decision,
+  isSelected,
+  onSelect,
+}: {
+  shift: StaffingShift;
+  decision: string;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <th className="min-w-[120px] px-3 py-2.5 text-center">
+      <button
+        onClick={onSelect}
+        className={cn(
+          "inline-flex w-full flex-col items-center gap-0.5",
+          isSelected && "opacity-100",
+        )}
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium text-foreground">
+            {shift.name}
+          </span>
+          <div
+            className={cn("h-1 w-1 rounded-full", DECISION_DOT[decision])}
+          />
+        </div>
+        <span className="text-[10px] text-muted-foreground">
+          {formatTimeRange(shift.startHour, shift.endHour)}
+        </span>
+        <span
+          className={cn(
+            "mt-0.5 rounded-full px-1.5 py-px text-[9px] font-medium",
+            CATEGORY_BADGE[shift.category],
+          )}
+        >
+          {shift.category}
+        </span>
+      </button>
+    </th>
   );
 }
 

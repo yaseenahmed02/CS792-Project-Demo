@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { RiskPosture, ScenarioState } from "@/lib/types";
 import { generateForecast, generateStaffingProposal } from "@/lib/generators";
+import { DEFAULT_HOSPITAL_CONFIG } from "@/lib/constants";
 
 /**Parse a query param string as a boolean, defaulting to false.*/
 function parseBoolParam(value: string | null): boolean {
@@ -30,8 +31,8 @@ export async function GET(request: NextRequest) {
   };
 
   const riskPosture = parseRiskPosture(params.get("riskPosture"));
-  const forecast = generateForecast(scenarios, riskPosture);
-  const proposal = generateStaffingProposal(forecast);
+  const forecast = generateForecast(scenarios, riskPosture, DEFAULT_HOSPITAL_CONFIG);
+  const proposal = generateStaffingProposal(forecast, DEFAULT_HOSPITAL_CONFIG);
 
   return NextResponse.json(proposal);
 }

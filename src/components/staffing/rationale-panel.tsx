@@ -2,19 +2,19 @@
 
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import type { StaffingBlock } from "@/lib/types";
+import type { StaffingShift } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 import { formatHour } from "@/lib/utils/format";
 
 interface RationalePanelProps {
-  block: StaffingBlock;
+  shift: StaffingShift;
   riskPosture: string;
   scenarios: { influenzaOutbreak: boolean; majorIncident: boolean };
 }
 
-/**Collapsible panel explaining the rationale behind a block's staffing.*/
+/**Collapsible panel explaining the rationale behind a shift's staffing.*/
 export function RationalePanel({
-  block,
+  shift,
   riskPosture,
   scenarios,
 }: RationalePanelProps) {
@@ -33,15 +33,16 @@ export function RationalePanel({
             isOpen && "rotate-90",
           )}
         />
-        Why this schedule for {block.blockId}?
+        Why this schedule for {shift.name}?
       </button>
 
       {isOpen && (
         <div className="mt-3 space-y-3 pl-5">
           <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-xs">
             <FactorItem label="Risk posture" value={riskPosture} />
-            <FactorItem label="Peak load" value={block.blockLoad.toFixed(1)} />
-            <FactorItem label="Peak hour" value={formatHour(block.peakHour)} />
+            <FactorItem label="Shift load" value={shift.shiftLoad.toFixed(1)} />
+            <FactorItem label="Peak hour" value={formatHour(shift.peakHour)} />
+            <FactorItem label="Category" value={shift.category} />
             <FactorItem
               label="Active scenarios"
               value={activeScenarios || "None"}
@@ -52,7 +53,7 @@ export function RationalePanel({
             <p className="text-xs font-medium text-muted-foreground">
               Role-by-role reasoning
             </p>
-            {block.roles.map((role) => (
+            {shift.roles.map((role) => (
               <p key={role.role} className="text-xs text-muted-foreground">
                 {role.rationale}
               </p>

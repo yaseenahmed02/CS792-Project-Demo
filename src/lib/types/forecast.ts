@@ -18,9 +18,10 @@ export interface ForecastResponse {
   generatedAt: string;
   scenarios: ScenarioState;
   riskPosture: RiskPosture;
-  nonSevereArrivals: ForecastSeries;
-  highAcuityArrivals: ForecastSeries;
+  ctasArrivals: Record<number, ForecastSeries>;
   edOccupancy: ForecastSeries;
+  orUtilization: ForecastSeries;
+  equipmentUtilization: Record<string, ForecastSeries>;
 }
 
 export interface ScenarioState {

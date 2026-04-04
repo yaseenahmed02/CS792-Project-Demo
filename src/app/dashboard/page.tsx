@@ -7,11 +7,14 @@ import {
   RiskSelector,
   CurrentEdStatus,
   ForecastChart,
+  CTASArrivalsChart,
+  ORUtilizationChart,
+  EquipmentUtilizationChart,
 } from "@/components/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OCCUPANCY_CAPACITY } from "@/lib/constants";
 
-/**Skeleton placeholder for the controls row while loading.*/
+/** Skeleton placeholder for the controls row while loading. */
 function ControlsSkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -21,23 +24,23 @@ function ControlsSkeleton() {
   );
 }
 
-/**Skeleton placeholder for the 4 metric cards while loading.*/
+/** Skeleton placeholder for the 6 metric cards while loading. */
 function MetricsSkeleton() {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {Array.from({ length: 4 }).map((_, i) => (
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      {Array.from({ length: 6 }).map((_, i) => (
         <Skeleton key={i} className="h-[120px] rounded-lg" />
       ))}
     </div>
   );
 }
 
-/**Skeleton placeholder for a forecast chart while loading.*/
+/** Skeleton placeholder for a forecast chart while loading. */
 function ChartSkeleton() {
   return <Skeleton className="h-[320px] rounded-lg" />;
 }
 
-/**Error banner with retry action.*/
+/** Error banner with retry action. */
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
@@ -55,7 +58,7 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
   );
 }
 
-/**Dashboard page assembling scenario controls, metrics, and forecast charts.*/
+/** Dashboard page assembling scenario controls, metrics, and forecast charts. */
 export default function DashboardPage() {
   const { forecast, isLoading, error, refetch } = useForecast();
 
@@ -76,11 +79,12 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <ControlsSkeleton />
         <MetricsSkeleton />
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
-          <ChartSkeleton />
+        <ChartSkeleton />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           <ChartSkeleton />
           <ChartSkeleton />
         </div>
+        <ChartSkeleton />
       </div>
     );
   }
@@ -106,18 +110,11 @@ export default function DashboardPage() {
       {/* Second row: Current ED status metrics */}
       <CurrentEdStatus forecast={forecast} />
 
-      {/* Main area: Forecast charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
-        <ForecastChart
-          series={forecast.nonSevereArrivals}
-          title="Non-severe arrivals"
-          unit="patients/hr"
-        />
-        <ForecastChart
-          series={forecast.highAcuityArrivals}
-          title="High-acuity arrivals"
-          unit="patients/hr"
-        />
+      {/* CTAS arrivals chart — full width */}
+      <CTASArrivalsChart ctasArrivals={forecast.ctasArrivals} />
+
+      {/* ED occupancy + OR utilization — side by side */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
         <ForecastChart
           series={forecast.edOccupancy}
           title="ED occupancy"
@@ -125,7 +122,13 @@ export default function DashboardPage() {
           showCapacityLine
           capacityValue={OCCUPANCY_CAPACITY}
         />
+        <ORUtilizationChart series={forecast.orUtilization} />
       </div>
+
+      {/* Equipment utilization chart — full width */}
+      <EquipmentUtilizationChart
+        equipmentUtilization={forecast.equipmentUtilization}
+      />
     </motion.div>
   );
 }

@@ -11,15 +11,17 @@ export type RoleName =
   | "Social Worker"
   | "Security Officer";
 
-export type BlockId = "B1" | "B2" | "B3" | "B4" | "B5" | "B6";
+export type ShiftId = string;
 
-export interface StaffingBlock {
-  blockId: BlockId;
-  startHour: number; // 0, 4, 8, 12, 16, 20
-  endHour: number; // 4, 8, 12, 16, 20, 24
-  label: string; // "00:00 - 04:00"
+export interface StaffingShift {
+  shiftId: ShiftId;
+  name: string;
+  startHour: number;
+  endHour: number;
+  isOvernight: boolean;
+  category: "core" | "swing" | "flex";
   roles: RoleStaffing[];
-  blockLoad: number;
+  shiftLoad: number;
   peakHour: number;
 }
 
@@ -31,23 +33,36 @@ export interface RoleStaffing {
   rationale: string;
 }
 
+export interface HourlyRoleDemand {
+  hour: number;
+  roles: Record<RoleName, number>;
+}
+
+export interface ResourceUtilization {
+  orUtilization: number[];
+  equipmentUtilization: Record<string, number[]>;
+}
+
 export interface StaffingProposal {
   generatedAt: string;
   scenarios: ScenarioState;
   riskPosture: RiskPosture;
-  blocks: StaffingBlock[];
+  shifts: StaffingShift[];
+  hourlyDemand: HourlyRoleDemand[];
+  hourlyCoverage: HourlyRoleDemand[];
+  resourceUtilization: ResourceUtilization;
 }
 
-export type BlockDecision =
+export type ShiftDecision =
   | "pending"
   | "accepted"
   | "declined"
   | "manual"
   | "re-suggested";
 
-export interface BlockDecisionState {
-  blockId: BlockId;
-  decision: BlockDecision;
+export interface ShiftDecisionState {
+  shiftId: ShiftId;
+  decision: ShiftDecision;
   decidedAt?: string;
   originalProposal: RoleStaffing[];
   currentStaffing: RoleStaffing[];
@@ -62,14 +77,14 @@ export interface StaffingConstraint {
 }
 
 export interface ReSuggestRequest {
-  blockId: BlockId;
+  shiftId: ShiftId;
   constraints: StaffingConstraint[];
   riskPosture: RiskPosture;
   scenarios: ScenarioState;
 }
 
 export interface ReSuggestResponse {
-  blockId: BlockId;
+  shiftId: ShiftId;
   original: RoleStaffing[];
   revised: RoleStaffing[];
   explanation: string;

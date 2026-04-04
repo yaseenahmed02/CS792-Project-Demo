@@ -1,5 +1,5 @@
 import type {
-  BlockId,
+  ShiftId,
   RoleName,
   RoleStaffing,
   StaffingConstraint,
@@ -8,8 +8,8 @@ import type { RiskPosture, ScenarioState } from "./forecast";
 
 export type AuditEventType =
   | "proposal_generated"
-  | "block_accepted"
-  | "block_declined"
+  | "shift_accepted"
+  | "shift_declined"
   | "manual_override"
   | "re_suggest_requested"
   | "re_suggest_accepted"
@@ -19,7 +19,7 @@ export interface AuditEntry {
   id: string;
   timestamp: string;
   eventType: AuditEventType;
-  blockId?: BlockId;
+  shiftId?: ShiftId;
   summary: string;
   detail: AuditDetail;
 }

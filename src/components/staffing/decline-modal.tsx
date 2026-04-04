@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { BlockId, RoleStaffing, StaffingConstraint } from "@/lib/types";
+import type { ShiftId, RoleStaffing, StaffingConstraint } from "@/lib/types";
 import { ManualEntryForm } from "./manual-entry-form";
 import { ConstraintForm } from "./constraint-form";
 import { ReSuggestPanel } from "./re-suggest-panel";
@@ -19,7 +19,7 @@ type ModalView = "reason" | "manual" | "constraints" | "re-suggest";
 interface DeclineModalProps {
   isOpen: boolean;
   onClose: () => void;
-  blockId: BlockId;
+  shiftId: ShiftId;
   currentStaffing: RoleStaffing[];
   onDeclineWithManual: (reason: string, staffing: RoleStaffing[]) => void;
   onDeclineWithReSuggest: (
@@ -29,11 +29,11 @@ interface DeclineModalProps {
   ) => void;
 }
 
-/**Modal dialog for declining a block with manual entry or re-suggest options.*/
+/**Modal dialog for declining a shift with manual entry or re-suggest options.*/
 export function DeclineModal({
   isOpen,
   onClose,
-  blockId,
+  shiftId,
   currentStaffing,
   onDeclineWithManual,
   onDeclineWithReSuggest,
@@ -72,16 +72,12 @@ export function DeclineModal({
     onClose();
   }
 
-  function handleKeepOriginal() {
-    setView("reason");
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold">
-            Decline block {blockId}
+            Decline shift: {shiftId}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {getViewDescription(view)}
@@ -118,11 +114,11 @@ export function DeclineModal({
 
         {view === "re-suggest" && (
           <ReSuggestPanel
-            blockId={blockId}
+            shiftId={shiftId}
             originalStaffing={currentStaffing}
             constraints={constraints}
             onAcceptRevised={handleAcceptRevised}
-            onKeepOriginal={handleKeepOriginal}
+            onKeepOriginal={() => setView("reason")}
           />
         )}
       </DialogContent>

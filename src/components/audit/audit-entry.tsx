@@ -41,9 +41,9 @@ export function AuditEntryCard({ entry }: AuditEntryProps) {
             >
               {config.label}
             </span>
-            {entry.blockId && (
+            {entry.shiftId && (
               <span className="text-[10px] font-mono text-muted-foreground">
-                {entry.blockId}
+                {entry.shiftId}
               </span>
             )}
           </div>

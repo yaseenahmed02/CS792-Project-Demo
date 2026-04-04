@@ -22,7 +22,7 @@ export const EVENT_TYPE_CONFIG: Record<AuditEventType, EventTypeStyle> = {
     borderColor: "border-l-blue-400",
     dotColor: "bg-blue-400",
   },
-  block_accepted: {
+  shift_accepted: {
     label: "Accepted",
     bg: "bg-emerald-500/10",
     text: "text-emerald-600 dark:text-emerald-400",
@@ -30,7 +30,7 @@ export const EVENT_TYPE_CONFIG: Record<AuditEventType, EventTypeStyle> = {
     borderColor: "border-l-emerald-400",
     dotColor: "bg-emerald-400",
   },
-  block_declined: {
+  shift_declined: {
     label: "Declined",
     bg: "bg-rose-500/10",
     text: "text-rose-600 dark:text-rose-400",

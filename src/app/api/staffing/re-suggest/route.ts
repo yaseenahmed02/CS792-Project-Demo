@@ -11,7 +11,7 @@ function simulateThinking(): Promise<void> {
 
 /**
  * POST /api/staffing/re-suggest
- * Body: ReSuggestRequest (blockId, constraints, riskPosture, scenarios)
+ * Body: ReSuggestRequest (shiftId, constraints, riskPosture, scenarios)
  * Also requires `originalStaffing` in the body for the re-suggestion base.
  * Returns a ReSuggestResponse after a simulated delay.
  */
@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!body.blockId || !body.constraints || !Array.isArray(body.constraints)) {
+  if (!body.shiftId || !body.constraints || !Array.isArray(body.constraints)) {
     return NextResponse.json(
-      { error: "Missing required fields: blockId, constraints" },
+      { error: "Missing required fields: shiftId, constraints" },
       { status: 400 },
     );
   }
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
   const response = generateReSuggestion(
     {
-      blockId: body.blockId,
+      shiftId: body.shiftId,
       constraints: body.constraints,
       riskPosture: body.riskPosture,
       scenarios: body.scenarios,

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
-  BlockId,
+  ShiftId,
   RoleStaffing,
   StaffingConstraint,
   ReSuggestResponse,
@@ -14,7 +14,7 @@ import { formatDelta } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
 interface ReSuggestPanelProps {
-  blockId: BlockId;
+  shiftId: ShiftId;
   originalStaffing: RoleStaffing[];
   constraints: StaffingConstraint[];
   onAcceptRevised: (staffing: RoleStaffing[]) => void;
@@ -23,7 +23,7 @@ interface ReSuggestPanelProps {
 
 /**Panel showing re-suggestion results with side-by-side comparison.*/
 export function ReSuggestPanel({
-  blockId,
+  shiftId,
   originalStaffing,
   constraints,
   onAcceptRevised,
@@ -48,7 +48,7 @@ export function ReSuggestPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          blockId,
+          shiftId,
           constraints,
           riskPosture,
           scenarios,
@@ -90,9 +90,7 @@ export function ReSuggestPanel({
     );
   }
 
-  if (!response) {
-    return null;
-  }
+  if (!response) return null;
 
   return (
     <div className="space-y-4">
@@ -103,54 +101,7 @@ export function ReSuggestPanel({
         </p>
       )}
 
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b">
-            <th className="py-1.5 text-left text-xs font-medium text-muted-foreground">
-              Role
-            </th>
-            <th className="py-1.5 text-center text-xs font-medium text-muted-foreground">
-              Original
-            </th>
-            <th className="py-1.5 text-center text-xs font-medium text-muted-foreground">
-              Revised
-            </th>
-            <th className="py-1.5 text-right text-xs font-medium text-muted-foreground">
-              Delta
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {response.revised.map((revised, i) => {
-            const original = response.original[i];
-            const delta = revised.headcount - original.headcount;
-
-            return (
-              <tr key={revised.role} className="border-b last:border-b-0">
-                <td className="py-2 text-sm">{revised.role}</td>
-                <td className="py-2 text-center tabular-nums text-muted-foreground">
-                  {original.headcount}
-                </td>
-                <td className="py-2 text-center font-medium tabular-nums">
-                  {revised.headcount}
-                </td>
-                <td className="py-2 text-right">
-                  {delta !== 0 && (
-                    <span
-                      className={cn(
-                        "text-xs tabular-nums",
-                        delta > 0 ? "text-emerald-600" : "text-rose-600",
-                      )}
-                    >
-                      {formatDelta(delta)}
-                    </span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <ComparisonTable response={response} />
 
       <p className="text-xs text-muted-foreground">{response.explanation}</p>
 
@@ -163,5 +114,58 @@ export function ReSuggestPanel({
         </Button>
       </div>
     </div>
+  );
+}
+
+function ComparisonTable({ response }: { response: ReSuggestResponse }) {
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b">
+          <th className="py-1.5 text-left text-xs font-medium text-muted-foreground">
+            Role
+          </th>
+          <th className="py-1.5 text-center text-xs font-medium text-muted-foreground">
+            Original
+          </th>
+          <th className="py-1.5 text-center text-xs font-medium text-muted-foreground">
+            Revised
+          </th>
+          <th className="py-1.5 text-right text-xs font-medium text-muted-foreground">
+            Delta
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {response.revised.map((revised, i) => {
+          const original = response.original[i];
+          const delta = revised.headcount - original.headcount;
+
+          return (
+            <tr key={revised.role} className="border-b last:border-b-0">
+              <td className="py-2 text-sm">{revised.role}</td>
+              <td className="py-2 text-center tabular-nums text-muted-foreground">
+                {original.headcount}
+              </td>
+              <td className="py-2 text-center font-medium tabular-nums">
+                {revised.headcount}
+              </td>
+              <td className="py-2 text-right">
+                {delta !== 0 && (
+                  <span
+                    className={cn(
+                      "text-xs tabular-nums",
+                      delta > 0 ? "text-emerald-600" : "text-rose-600",
+                    )}
+                  >
+                    {formatDelta(delta)}
+                  </span>
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }

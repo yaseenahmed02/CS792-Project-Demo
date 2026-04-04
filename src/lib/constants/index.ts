@@ -1,8 +1,13 @@
 export { ROLES } from "./roles";
 export type { RoleConfig } from "./roles";
 
-export { BLOCKS } from "./blocks";
-export type { BlockConfig } from "./blocks";
+export { CTAS_LEVELS } from "./ctas";
+
+export { DEFAULT_EQUIPMENT } from "./equipment";
+
+export { DEFAULT_SHIFTS } from "./shifts";
+
+export { DEFAULT_HOSPITAL_CONFIG } from "./hospital-config";
 
 export {
   OCCUPANCY_CAPACITY,

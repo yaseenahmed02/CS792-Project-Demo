@@ -8,12 +8,14 @@ export type {
 
 export type {
   RoleName,
-  BlockId,
-  StaffingBlock,
+  ShiftId,
+  StaffingShift,
   RoleStaffing,
+  HourlyRoleDemand,
+  ResourceUtilization,
   StaffingProposal,
-  BlockDecision,
-  BlockDecisionState,
+  ShiftDecision,
+  ShiftDecisionState,
   StaffingConstraint,
   ReSuggestRequest,
   ReSuggestResponse,
@@ -24,3 +26,11 @@ export type {
   AuditEntry,
   AuditDetail,
 } from "./audit";
+
+export type {
+  CTASLevel,
+  ShiftTemplate,
+  DiagnosticEquipment,
+  ArrivalMode,
+  HospitalConfig,
+} from "./settings";

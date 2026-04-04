@@ -1,62 +1,58 @@
 import { create } from "zustand";
 import type {
-  BlockId,
-  BlockDecisionState,
+  ShiftId,
+  ShiftDecisionState,
   RoleStaffing,
   StaffingProposal,
 } from "@/lib/types";
 
 interface StaffingStore {
-  decisions: Record<BlockId, BlockDecisionState>;
+  decisions: Record<ShiftId, ShiftDecisionState>;
   initializeFromProposal: (proposal: StaffingProposal) => void;
-  acceptBlock: (blockId: BlockId) => void;
-  declineBlock: (blockId: BlockId, reason: string) => void;
-  applyManualOverride: (blockId: BlockId, staffing: RoleStaffing[]) => void;
-  applyReSuggestion: (blockId: BlockId, staffing: RoleStaffing[]) => void;
-  resetBlock: (blockId: BlockId) => void;
+  acceptShift: (shiftId: ShiftId) => void;
+  declineShift: (shiftId: ShiftId, reason: string) => void;
+  applyManualOverride: (shiftId: ShiftId, staffing: RoleStaffing[]) => void;
+  applyReSuggestion: (shiftId: ShiftId, staffing: RoleStaffing[]) => void;
+  resetShift: (shiftId: ShiftId) => void;
   allDecided: () => boolean;
 }
 
-function createEmptyDecisions(): Record<BlockId, BlockDecisionState> {
-  return {} as Record<BlockId, BlockDecisionState>;
-}
-
 export const useStaffingStore = create<StaffingStore>((set, get) => ({
-  decisions: createEmptyDecisions(),
+  decisions: {},
 
   initializeFromProposal: (proposal) => {
-    const decisions: Record<string, BlockDecisionState> = {};
+    const decisions: Record<string, ShiftDecisionState> = {};
 
-    for (const block of proposal.blocks) {
-      decisions[block.blockId] = {
-        blockId: block.blockId,
+    for (const shift of proposal.shifts) {
+      decisions[shift.shiftId] = {
+        shiftId: shift.shiftId,
         decision: "pending",
-        originalProposal: [...block.roles],
-        currentStaffing: [...block.roles],
+        originalProposal: [...shift.roles],
+        currentStaffing: [...shift.roles],
       };
     }
 
-    set({ decisions: decisions as Record<BlockId, BlockDecisionState> });
+    set({ decisions });
   },
 
-  acceptBlock: (blockId) =>
+  acceptShift: (shiftId) =>
     set((state) => ({
       decisions: {
         ...state.decisions,
-        [blockId]: {
-          ...state.decisions[blockId],
+        [shiftId]: {
+          ...state.decisions[shiftId],
           decision: "accepted" as const,
           decidedAt: new Date().toISOString(),
         },
       },
     })),
 
-  declineBlock: (blockId, reason) =>
+  declineShift: (shiftId, reason) =>
     set((state) => ({
       decisions: {
         ...state.decisions,
-        [blockId]: {
-          ...state.decisions[blockId],
+        [shiftId]: {
+          ...state.decisions[shiftId],
           decision: "declined" as const,
           decidedAt: new Date().toISOString(),
           declineReason: reason,
@@ -64,12 +60,12 @@ export const useStaffingStore = create<StaffingStore>((set, get) => ({
       },
     })),
 
-  applyManualOverride: (blockId, staffing) =>
+  applyManualOverride: (shiftId, staffing) =>
     set((state) => ({
       decisions: {
         ...state.decisions,
-        [blockId]: {
-          ...state.decisions[blockId],
+        [shiftId]: {
+          ...state.decisions[shiftId],
           decision: "manual" as const,
           decidedAt: new Date().toISOString(),
           currentStaffing: staffing,
@@ -77,12 +73,12 @@ export const useStaffingStore = create<StaffingStore>((set, get) => ({
       },
     })),
 
-  applyReSuggestion: (blockId, staffing) =>
+  applyReSuggestion: (shiftId, staffing) =>
     set((state) => ({
       decisions: {
         ...state.decisions,
-        [blockId]: {
-          ...state.decisions[blockId],
+        [shiftId]: {
+          ...state.decisions[shiftId],
           decision: "re-suggested" as const,
           decidedAt: new Date().toISOString(),
           currentStaffing: staffing,
@@ -90,15 +86,15 @@ export const useStaffingStore = create<StaffingStore>((set, get) => ({
       },
     })),
 
-  resetBlock: (blockId) =>
+  resetShift: (shiftId) =>
     set((state) => {
-      const existing = state.decisions[blockId];
+      const existing = state.decisions[shiftId];
       if (!existing) return state;
 
       return {
         decisions: {
           ...state.decisions,
-          [blockId]: {
+          [shiftId]: {
             ...existing,
             decision: "pending" as const,
             decidedAt: undefined,
@@ -112,8 +108,8 @@ export const useStaffingStore = create<StaffingStore>((set, get) => ({
 
   allDecided: () => {
     const decisions = get().decisions;
-    const blockIds = Object.keys(decisions);
-    if (blockIds.length === 0) return false;
-    return blockIds.every((id) => decisions[id as BlockId].decision !== "pending");
+    const shiftIds = Object.keys(decisions);
+    if (shiftIds.length === 0) return false;
+    return shiftIds.every((id) => decisions[id].decision !== "pending");
   },
 }));

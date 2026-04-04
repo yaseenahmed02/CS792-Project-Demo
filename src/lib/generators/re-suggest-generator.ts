@@ -98,7 +98,7 @@ export function generateReSuggestion(
   const totalDelta = computeTotalDelta(originalStaffing, revised);
 
   return {
-    blockId: request.blockId,
+    shiftId: request.shiftId,
     original: originalStaffing,
     revised,
     explanation: buildExplanation(request.constraints, allSatisfied, totalDelta),

@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, LayoutDashboard, Moon, Sun, Users } from "lucide-react";
+import { FileText, LayoutDashboard, Moon, Settings, Sun, Users } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/staffing", label: "Staffing", icon: Users },
   { href: "/audit", label: "Audit Log", icon: FileText },
+  { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 export function Sidebar() {

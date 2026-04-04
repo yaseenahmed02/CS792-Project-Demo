@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AuditEntry, AuditEventType, AuditDetail, BlockId } from "@/lib/types";
+import type { AuditEntry, ShiftId } from "@/lib/types";
 
 interface AuditStore {
   entries: AuditEntry[];
   addEntry: (entry: Omit<AuditEntry, "id" | "timestamp">) => void;
-  getEntriesForBlock: (blockId: BlockId) => AuditEntry[];
+  getEntriesForShift: (shiftId: ShiftId) => AuditEntry[];
   clearEntries: () => void;
 }
 
@@ -29,9 +29,9 @@ const DEMO_ENTRIES: AuditEntry[] = [
   {
     id: "demo-2",
     timestamp: new Date(Date.now() - 3600_000).toISOString(),
-    eventType: "block_accepted",
-    blockId: "B3",
-    summary: "Block B3 (08:00 - 12:00) accepted by charge nurse",
+    eventType: "shift_accepted",
+    shiftId: "day",
+    summary: "Day Shift (07:00 - 15:00) accepted by charge nurse",
     detail: {
       decisionMaker: "Charge Nurse",
       riskPosture: "normal",
@@ -42,8 +42,8 @@ const DEMO_ENTRIES: AuditEntry[] = [
     id: "demo-3",
     timestamp: new Date(Date.now() - 1800_000).toISOString(),
     eventType: "manual_override",
-    blockId: "B4",
-    summary: "Block B4 (12:00 - 16:00) manually adjusted - added 1 Emergency Nurse",
+    shiftId: "evening",
+    summary: "Evening Shift (15:00 - 23:00) manually adjusted - added 1 Emergency Nurse",
     detail: {
       decisionMaker: "Charge Nurse",
       riskPosture: "normal",
@@ -55,8 +55,8 @@ const DEMO_ENTRIES: AuditEntry[] = [
     id: "demo-4",
     timestamp: new Date(Date.now() - 900_000).toISOString(),
     eventType: "re_suggest_requested",
-    blockId: "B5",
-    summary: "Re-suggestion requested for Block B5 with min 3 Attending Physicians",
+    shiftId: "night",
+    summary: "Re-suggestion requested for Night Shift with min 3 Attending Physicians",
     detail: {
       decisionMaker: "Charge Nurse",
       riskPosture: "elevated",
@@ -83,8 +83,8 @@ export const useAuditStore = create<AuditStore>()(
         }));
       },
 
-      getEntriesForBlock: (blockId) => {
-        return get().entries.filter((e) => e.blockId === blockId);
+      getEntriesForShift: (shiftId) => {
+        return get().entries.filter((e) => e.shiftId === shiftId);
       },
 
       clearEntries: () => set({ entries: [] }),

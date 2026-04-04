@@ -1,24 +1,25 @@
 "use client";
 
-import type { AuditEventType, BlockId } from "@/lib/types";
+import type { AuditEventType, ShiftId } from "@/lib/types";
+import { DEFAULT_SHIFTS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { EVENT_TYPE_CONFIG } from "./event-type-config";
 
 const ALL_EVENT_TYPES: AuditEventType[] = [
   "proposal_generated",
-  "block_accepted",
-  "block_declined",
+  "shift_accepted",
+  "shift_declined",
   "manual_override",
   "re_suggest_requested",
   "re_suggest_accepted",
   "schedule_exported",
 ];
 
-const ALL_BLOCKS: BlockId[] = ["B1", "B2", "B3", "B4", "B5", "B6"];
+const ALL_SHIFTS = DEFAULT_SHIFTS.map((s) => ({ id: s.id as ShiftId, name: s.name }));
 
 export interface AuditFilterState {
   eventTypes: Set<AuditEventType>;
-  blocks: Set<BlockId>;
+  shifts: Set<ShiftId>;
   sortNewestFirst: boolean;
 }
 
@@ -29,7 +30,7 @@ interface AuditFiltersProps {
   totalCount: number;
 }
 
-/**Filter bar for the audit log with event type and block toggles.*/
+/** Filter bar for the audit log with event type and shift toggles. */
 export function AuditFilters({
   filters,
   onFiltersChange,
@@ -38,7 +39,7 @@ export function AuditFilters({
 }: AuditFiltersProps) {
   const hasActiveFilters =
     filters.eventTypes.size < ALL_EVENT_TYPES.length ||
-    filters.blocks.size < ALL_BLOCKS.length;
+    filters.shifts.size < ALL_SHIFTS.length;
 
   return (
     <div className="space-y-3">
@@ -65,20 +66,20 @@ export function AuditFilters({
 
       <div className="flex items-center gap-3">
         <div className="flex gap-1">
-          {ALL_BLOCKS.map((block) => {
-            const isActive = filters.blocks.has(block);
+          {ALL_SHIFTS.map((shift) => {
+            const isActive = filters.shifts.has(shift.id);
             return (
               <button
-                key={block}
-                onClick={() => toggleBlock(block, filters, onFiltersChange)}
+                key={shift.id}
+                onClick={() => toggleShift(shift.id, filters, onFiltersChange)}
                 className={cn(
-                  "rounded px-2 py-1 text-[11px] font-mono font-medium transition-colors",
+                  "rounded px-2 py-1 text-[11px] font-medium transition-colors",
                   isActive
                     ? "bg-foreground/[0.08] text-foreground"
                     : "text-muted-foreground/50 hover:text-muted-foreground",
                 )}
               >
-                {block}
+                {shift.name}
               </button>
             );
           })}
@@ -124,18 +125,18 @@ function toggleEventType(
   onChange({ ...filters, eventTypes: next });
 }
 
-function toggleBlock(
-  block: BlockId,
+function toggleShift(
+  shiftId: ShiftId,
   filters: AuditFilterState,
   onChange: (f: AuditFilterState) => void,
 ): void {
-  const next = new Set(filters.blocks);
-  if (next.has(block)) {
-    next.delete(block);
+  const next = new Set(filters.shifts);
+  if (next.has(shiftId)) {
+    next.delete(shiftId);
   } else {
-    next.add(block);
+    next.add(shiftId);
   }
-  onChange({ ...filters, blocks: next });
+  onChange({ ...filters, shifts: next });
 }
 
 function toggleSort(
@@ -148,16 +149,16 @@ function toggleSort(
 function clearFilters(onChange: (f: AuditFilterState) => void): void {
   onChange({
     eventTypes: new Set(ALL_EVENT_TYPES),
-    blocks: new Set(ALL_BLOCKS),
+    shifts: new Set(ALL_SHIFTS.map((s) => s.id)),
     sortNewestFirst: true,
   });
 }
 
-/**Create initial filter state with everything selected.*/
+/** Create initial filter state with everything selected. */
 export function createDefaultFilters(): AuditFilterState {
   return {
     eventTypes: new Set(ALL_EVENT_TYPES),
-    blocks: new Set(ALL_BLOCKS),
+    shifts: new Set(ALL_SHIFTS.map((s) => s.id)),
     sortNewestFirst: true,
   };
 }

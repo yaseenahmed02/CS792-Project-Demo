@@ -1,12 +1,12 @@
 "use client";
 
-import { Check, RotateCcw } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { BlockId, BlockDecision } from "@/lib/types";
+import type { ShiftId, ShiftDecision } from "@/lib/types";
 
-interface BlockActionsProps {
-  blockId: BlockId;
-  decision: BlockDecision;
+interface ShiftActionsProps {
+  shiftId: ShiftId;
+  decision: ShiftDecision;
   onAccept: () => void;
   onDecline: () => void;
   onReset: () => void;
@@ -14,16 +14,15 @@ interface BlockActionsProps {
   onReSuggest: () => void;
 }
 
-/**Action buttons for each block column, adapting to current decision state.*/
-export function BlockActions({
-  blockId,
+/**Action buttons for each shift column, adapting to current decision state.*/
+export function ShiftActions({
   decision,
   onAccept,
   onDecline,
   onReset,
   onManualEntry,
   onReSuggest,
-}: BlockActionsProps) {
+}: ShiftActionsProps) {
   if (decision === "pending") {
     return (
       <div className="flex items-center justify-center gap-2">

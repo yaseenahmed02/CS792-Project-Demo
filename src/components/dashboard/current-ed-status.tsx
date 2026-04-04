@@ -8,24 +8,31 @@ import {
   Clock,
   TrendingUp,
   TrendingDown,
+  Scissors,
+  Stethoscope,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CapacityGauge } from "./capacity-gauge";
-import { OCCUPANCY_CAPACITY, WAIT_TIME_TARGET_MINUTES } from "@/lib/constants";
+import {
+  OCCUPANCY_CAPACITY,
+  WAIT_TIME_TARGET_MINUTES,
+  DEFAULT_HOSPITAL_CONFIG,
+  DEFAULT_EQUIPMENT,
+} from "@/lib/constants";
 import type { ForecastResponse } from "@/lib/types";
 
 const SPARKLINE_HOURS = 6;
 const WAIT_TIME_THRESHOLDS = { good: 20, warning: 35 };
 const BED_THRESHOLDS = { good: 15, warning: 8 };
 
-/**Derive a synthetic wait time from occupancy using a simple model.*/
+/** Derive a synthetic wait time from occupancy using a simple model. */
 function deriveWaitTime(occupancyP50: number): number {
   const utilization = occupancyP50 / OCCUPANCY_CAPACITY;
   // Queuing-theory-inspired: wait grows nonlinearly as utilization approaches 1
   return Math.round(5 + 25 * Math.pow(utilization, 2.5));
 }
 
-/**Build SVG path for a mini sparkline from data points.*/
+/** Build SVG path for a mini sparkline from data points. */
 function buildSparklinePath(values: number[]): string {
   if (values.length === 0) return "";
 
@@ -45,7 +52,7 @@ function buildSparklinePath(values: number[]): string {
     .join(" ");
 }
 
-/**Mini sparkline SVG for last N hours of data.*/
+/** Mini sparkline SVG for last N hours of data. */
 function Sparkline({ values }: { values: number[] }) {
   const path = buildSparklinePath(values);
   const isUp = values.length >= 2 && values[values.length - 1] >= values[values.length - 2];
@@ -65,7 +72,7 @@ function Sparkline({ values }: { values: number[] }) {
   );
 }
 
-/**Trend arrow with direction indicator.*/
+/** Trend arrow with direction indicator. */
 function TrendArrow({ current, previous }: { current: number; previous: number }) {
   const isUp = current >= previous;
   const Icon = isUp ? TrendingUp : TrendingDown;
@@ -74,7 +81,7 @@ function TrendArrow({ current, previous }: { current: number; previous: number }
   return <Icon className={cn("h-3.5 w-3.5", color)} />;
 }
 
-/**Status dot indicating severity level.*/
+/** Status dot indicating severity level. */
 function StatusDot({ level }: { level: "good" | "warning" | "critical" }) {
   const colors = {
     good: "bg-emerald-500",
@@ -87,17 +94,24 @@ function StatusDot({ level }: { level: "good" | "warning" | "critical" }) {
   );
 }
 
-/**Determine status level for wait time.*/
+/** Determine status level for wait time. */
 function getWaitTimeLevel(minutes: number): "good" | "warning" | "critical" {
   if (minutes < WAIT_TIME_THRESHOLDS.good) return "good";
   if (minutes < WAIT_TIME_THRESHOLDS.warning) return "warning";
   return "critical";
 }
 
-/**Determine status level for available beds.*/
+/** Determine status level for available beds. */
 function getBedsLevel(available: number): "good" | "warning" | "critical" {
   if (available > BED_THRESHOLDS.good) return "good";
   if (available > BED_THRESHOLDS.warning) return "warning";
+  return "critical";
+}
+
+/** Determine status level for utilization percentage. */
+function getUtilizationLevel(percent: number): "good" | "warning" | "critical" {
+  if (percent < 60) return "good";
+  if (percent < 80) return "warning";
   return "critical";
 }
 
@@ -108,7 +122,7 @@ interface MetricCardProps {
   index?: number;
 }
 
-/**Clean metric card with consistent styling and subtle entrance.*/
+/** Clean metric card with consistent styling and subtle entrance. */
 function MetricCard({ title, icon, children, index = 0 }: MetricCardProps) {
   return (
     <motion.div
@@ -131,37 +145,68 @@ function MetricCard({ title, icon, children, index = 0 }: MetricCardProps) {
   );
 }
 
-/**Four metric cards showing the current ED snapshot derived from forecast data.*/
+/** Sum P50 arrivals across all CTAS levels for a given hour. */
+function sumArrivalsAtHour(
+  ctasArrivals: Record<number, { data: { p50: number }[] }>,
+  hour: number,
+): number {
+  let total = 0;
+  for (let level = 1; level <= 5; level++) {
+    total += ctasArrivals[level]?.data[hour]?.p50 ?? 0;
+  }
+  return total;
+}
+
+/** Find the equipment with the highest current utilization. */
+function findPeakEquipment(
+  equipmentUtilization: Record<string, { data: { p50: number }[] }>,
+  hour: number,
+): { name: string; percent: number } {
+  let peakId = "";
+  let peakValue = 0;
+
+  for (const [id, series] of Object.entries(equipmentUtilization)) {
+    const value = series.data[hour]?.p50 ?? 0;
+    if (value > peakValue) {
+      peakValue = value;
+      peakId = id;
+    }
+  }
+
+  const equipment = DEFAULT_EQUIPMENT.find((e) => e.id === peakId);
+  const name = equipment?.name ?? peakId;
+  return { name, percent: Math.round(peakValue * 100) };
+}
+
+/** Six metric cards showing the current ED snapshot derived from forecast data. */
 export function CurrentEdStatus({ forecast }: { forecast: ForecastResponse }) {
   const currentHour = new Date().getHours();
   const occupancyData = forecast.edOccupancy.data;
-  const nonSevereData = forecast.nonSevereArrivals.data;
-  const highAcuityData = forecast.highAcuityArrivals.data;
 
   const currentOccupancy = Math.round(occupancyData[currentHour]?.p50 ?? occupancyData[0].p50);
   const availableBeds = Math.max(0, OCCUPANCY_CAPACITY - currentOccupancy);
 
-  const currentArrivals = Math.round(
-    (nonSevereData[currentHour]?.p50 ?? nonSevereData[0].p50) +
-    (highAcuityData[currentHour]?.p50 ?? highAcuityData[0].p50)
-  );
+  const currentArrivals = Math.round(sumArrivalsAtHour(forecast.ctasArrivals, currentHour));
   const prevHour = (currentHour - 1 + 24) % 24;
-  const previousArrivals = Math.round(
-    (nonSevereData[prevHour]?.p50 ?? 0) + (highAcuityData[prevHour]?.p50 ?? 0)
-  );
+  const previousArrivals = Math.round(sumArrivalsAtHour(forecast.ctasArrivals, prevHour));
 
   const sparklineValues: number[] = [];
   for (let i = SPARKLINE_HOURS - 1; i >= 0; i--) {
     const h = (currentHour - i + 24) % 24;
-    sparklineValues.push(
-      (nonSevereData[h]?.p50 ?? 0) + (highAcuityData[h]?.p50 ?? 0)
-    );
+    sparklineValues.push(sumArrivalsAtHour(forecast.ctasArrivals, h));
   }
 
   const waitTime = deriveWaitTime(currentOccupancy);
 
+  const orUtil = forecast.orUtilization.data[currentHour]?.p50 ?? 0;
+  const orPercent = Math.round(orUtil * 100);
+  const totalORs = DEFAULT_HOSPITAL_CONFIG.operatingRooms;
+  const activeORs = Math.round(orUtil * totalORs);
+
+  const peakEquipment = findPeakEquipment(forecast.equipmentUtilization, currentHour);
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
       <MetricCard
         title="Current occupancy"
         icon={<Activity className="h-4 w-4" />}
@@ -239,6 +284,48 @@ export function CurrentEdStatus({ forecast }: { forecast: ForecastResponse }) {
             {availableBeds <= BED_THRESHOLDS.warning
               ? "Capacity pressure - consider diversions"
               : "Within normal range"}
+          </p>
+        </div>
+      </MetricCard>
+
+      <MetricCard
+        title="OR Status"
+        icon={<Scissors className="h-4 w-4" />}
+        index={4}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-2xl font-semibold text-foreground">
+              <span className="flex items-center gap-1.5">
+                <StatusDot level={getUtilizationLevel(orPercent)} />
+                {activeORs}/{totalORs}
+              </span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">ORs in use</p>
+          </div>
+          <CapacityGauge
+            value={orPercent}
+            max={100}
+            label=""
+            size={56}
+          />
+        </div>
+      </MetricCard>
+
+      <MetricCard
+        title="Equipment Bottleneck"
+        icon={<Stethoscope className="h-4 w-4" />}
+        index={5}
+      >
+        <div>
+          <p className="text-2xl font-semibold text-foreground">
+            <span className="flex items-center gap-1.5">
+              <StatusDot level={getUtilizationLevel(peakEquipment.percent)} />
+              {peakEquipment.percent}%
+            </span>
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {peakEquipment.name}
           </p>
         </div>
       </MetricCard>

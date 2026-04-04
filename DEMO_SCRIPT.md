@@ -43,13 +43,19 @@ This is where the chief nurse plans. In production, the data feeding these forec
 
 Six cards give the charge nurse a snapshot: current occupancy out of 58 beds, arrivals last hour summed across all CTAS levels, average wait time derived from queuing theory, available beds, **OR status** — how many of our 2 ORs are in use — and the **equipment bottleneck**, which surfaces the most loaded diagnostic resource.
 
-**[Point to the CTAS Arrivals Chart]**
+**[Point to the two side-by-side charts]**
 
-This is a 24-hour forecast of arrivals broken down by all 5 CTAS levels — stacked and color-coded. Red is CTAS-1, orange CTAS-2, yellow CTAS-3, green CTAS-4, blue CTAS-5.
+These two charts are the core of the forecasting view. On the left, the **Arrivals Forecast** — split into two streams just like in our presentation. The blue area is **non-severe arrivals** (CTAS 3-5) and the red area is **high-acuity arrivals** (CTAS 1-2).
 
-**[Hover over a mid-day data point]**
+**[Hover over a mid-day data point on the left chart]**
 
-When I hover, the tooltip breaks down each level — you can see CTAS-4 and 5 peak mid-day when people visit the ER during waking hours, while CTAS-1 is flat because cardiac arrests don't follow a schedule.
+When I hover, the tooltip breaks down both streams — you can see non-severe arrivals peak mid-day when people visit the ER during waking hours, while high-acuity arrivals stay relatively flat because cardiac arrests don't follow a schedule.
+
+On the right is the **Current Patient Acuity** chart — this shows who's actually in the ED right now, broken down by CTAS level. This is the present-state view — not what's coming in, but what we're dealing with.
+
+**[Hover over a data point on the right chart]**
+
+The tooltip shows the breakdown: how many CTAS-1, CTAS-2, CTAS-3, etc. patients are occupying beds right now, with a total at the bottom. The red capacity line at 58 shows how close we are to full. Notice how the acuity mix shifts over 24 hours — CTAS-4/5 patients come and go quickly, but CTAS-1/2 patients accumulate because they stay 6-8 hours. This is acuity drift in action.
 
 **[Point to OR Utilization and Equipment Utilization charts]**
 
